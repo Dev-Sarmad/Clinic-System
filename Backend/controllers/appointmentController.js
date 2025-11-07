@@ -161,7 +161,7 @@ export const updateAppointmentStatus = async (req, res) => {
 
     const appointment = await Appointment.findByIdAndUpdate(
       id,
-      { status },
+      { $set: { status} },
       { new: true, runValidators: true }
     );
 

@@ -1,8 +1,20 @@
 import mongoose from "mongoose";
 const appointmentSchema = new mongoose.Schema({
-  doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor", required: true },
-  patientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room", required: false },
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Doctor",
+    required: true,
+  },
+  patientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  roomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Room",
+    required: false,
+  },
   date: { type: Date, required: true },
   timeSlot: {
     start: { type: String, required: true },

@@ -8,6 +8,7 @@ import config from "./config/config.js";
 import doctorRouter from "./routes/doctorRouter.js";
 import appointmentRouter from "./routes/appointmentRouter.js";
 import authenticationMiddleware from "./middlewares/authMiddleware.js";
+import prescriptionRouter from "./routes/prescriptionRouter.js";
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -19,6 +20,7 @@ app.use(
   doctorRouter
 );
 app.use("/api/appointments", authenticationMiddleware,appointmentRouter)
+app.use("/api/doctor/prescription",authenticationMiddleware ,prescriptionRouter)
 
 const startServer = async () => {
   await databaseConnection();
