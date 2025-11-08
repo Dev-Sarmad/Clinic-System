@@ -7,7 +7,7 @@ const authenticationMiddleware = async (req, res, next) => {
     //cheching if the token sent by the client in cookies if yes then get it
     if (req.cookies?.token) {
       token = req.cookies.token;
-    } else if (req.headers.authorization && req.headers.startsWith("Bearer ")) {
+    } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
       token = req.headers.authorization.split(" ")[1];
     }
     if (!token) throw new Error("You are not authenticated");

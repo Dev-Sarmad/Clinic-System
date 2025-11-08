@@ -89,6 +89,50 @@ const getDoctors = async (req, res) => {
     })),
   });
 };
+const getDoctorById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    if (!userId) {
+      return res.status(400).json({ message: "Please provide a valid doctor ID" });
+    }
+
+    const doctor = await Doctor.findOne({userId}).populate(
+      "userId",
+      "name email gender phone"
+    );
+
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Doctor fetched successfully",
+      data: {
+        id: doctor._id,
+        userId: doctor.userId._id,
+        name: doctor.userId?.name,
+        email: doctor.userId?.email,
+        gender: doctor.userId?.gender,
+        phone: doctor.userId?.phone,
+        specialization: doctor.specialization,
+        isAvailable: doctor.isAvailable,
+        qualification: doctor.qualification,
+        experience: doctor.experience,
+        timings: doctor.timings,
+        availableDays: doctor.availableDays,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching doctor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching doctor",
+      error: error.message,
+    });
+  }
+};
+
 const deleteDoctor = async (req, res) => {
   const doctorId = req.params.id;
   if (!doctorId) {
@@ -145,4 +189,4 @@ const updateDoctor = async (req, res) => {
     });
   }
 };
-export { createDoctor, getDoctors, deleteDoctor, updateDoctor };
+export { createDoctor, getDoctors, deleteDoctor, updateDoctor, getDoctorById };

@@ -2,6 +2,7 @@ import express from "express";
 import {
   createDoctor,
   deleteDoctor,
+  getDoctorById,
   getDoctors,
   updateDoctor
 } from "../controllers/doctorController.js";
@@ -18,6 +19,7 @@ doctorRouter.post(
   createDoctor
 );
 doctorRouter.get("/", getDoctors);
+doctorRouter.get("/:id", getDoctorById);
 doctorRouter.delete(
   "/:id",
   authenticationMiddleware,
