@@ -19,9 +19,7 @@ export const useLogin = () => {
     setError(null);
 
     try {
-      const res = await apiClient.post("auth/login", data, {
-        withCredentials: true
-      });
+      const res = await apiClient.post("auth/login", data, );
 
       const { user, token } = res.data;
 

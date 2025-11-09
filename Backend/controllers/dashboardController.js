@@ -2,44 +2,45 @@ import mongoose from "mongoose";
 import Appointment from "../models/appointmentModel.js";
 import Prescription from "../models/prescriptionModel.js";
 import User from "../models/userModel.js";
+import Doctor from "../models/doctorModel.js";
 
 export const getDashboard = async (req, res) => {
   try {
-    const { role, _id } = req.user; // Extract role and ID of the logged-in user
-
+    const { role, _id } = req.user;
     let dashboardData = {};
 
     if (role === "doctor") {
-      // Doctor's dashboard logic (already explained earlier)
-
-      const appointments = await Appointment.aggregate([
+      const appointmentsAgg = await Appointment.aggregate([
         { $match: { doctorId: new mongoose.Types.ObjectId(_id) } },
         {
           $group: {
             _id: "$status",
             count: { $sum: 1 },
-            appointments: { $push: "$$ROOT" }
-          }
-        }
+            appointments: { $push: "$$ROOT" },
+          },
+        },
       ]);
 
-      const completedAppointments = appointments.find(a => a._id === "completed")?.appointments || [];
+      const totalAppointments = appointmentsAgg.reduce((acc, item) => acc + item.count, 0);
+      const upcomingAppointments = appointmentsAgg.find(a => a._id === "scheduled")?.count || 0;
+      const cancelledAppointments = appointmentsAgg.find(a => a._id === "cancelled")?.count || 0;
+      const completedAppointments = appointmentsAgg.find(a => a._id === "completed")?.appointments || [];
+
       const today = new Date();
       const todayStart = new Date(today.setHours(0, 0, 0, 0));
       const todayEnd = new Date(today.setHours(23, 59, 59, 999));
+
       const todaysAppointments = await Appointment.find({
         doctorId: _id,
-        date: { $gte: todayStart, $lt: todayEnd }
-      });
+        date: { $gte: todayStart, $lt: todayEnd },
+      })
+        .populate("patientId", "name email")
+        .populate("doctorId", "specialization");
 
       const totalAppointmentsByPatient = await Appointment.aggregate([
         { $match: { doctorId: new mongoose.Types.ObjectId(_id) } },
-        { $group: { _id: "$patientId", count: { $sum: 1 } } }
+        { $group: { _id: "$patientId", count: { $sum: 1 } } },
       ]);
-
-      const totalAppointments = appointments.reduce((acc, item) => acc + item.count, 0);
-      const upcomingAppointments = appointments.find(a => a._id === "scheduled")?.count || 0;
-      const cancelledAppointments = appointments.find(a => a._id === "cancelled")?.count || 0;
 
       const prescriptions = await Prescription.find({ doctorId: _id })
         .populate("doctorId", "name specialization")
@@ -53,47 +54,42 @@ export const getDashboard = async (req, res) => {
         cancelledAppointments,
         todaysAppointments,
         totalAppointmentsByPatient,
-        prescriptions
+        prescriptions,
       };
+    }
 
-    } else if (role === "patient") {
-      // Patient's dashboard logic
-      // 1. Fetch all appointments for the patient
-      const appointments = await Appointment.aggregate([
+    else if (role === "patient") {
+      const appointmentsAgg = await Appointment.aggregate([
         { $match: { patientId: new mongoose.Types.ObjectId(_id) } },
         {
           $group: {
-            _id: "$status", 
+            _id: "$status",
             count: { $sum: 1 },
-            appointments: { $push: "$$ROOT" }
-          }
-        }
+            appointments: { $push: "$$ROOT" },
+          },
+        },
       ]);
 
-      // 2. Fetch completed appointments (status = "completed")
-      const completedAppointments = appointments.find(a => a._id === "completed")?.appointments || [];
+      const totalAppointments = appointmentsAgg.reduce((acc, item) => acc + item.count, 0);
+      const completedAppointments = appointmentsAgg.find(a => a._id === "completed")?.appointments || [];
+      const upcomingAppointments = appointmentsAgg.find(a => a._id === "scheduled")?.appointments || [];
+      const cancelledAppointments = appointmentsAgg.find(a => a._id === "cancelled")?.count || 0;
 
-      // 3. Fetch upcoming appointments (status = "scheduled")
-      const upcomingAppointments = appointments.find(a => a._id === "scheduled")?.appointments || [];
-
-      // 4. Fetch today's appointments (appointments that happen today)
       const today = new Date();
       const todayStart = new Date(today.setHours(0, 0, 0, 0));
       const todayEnd = new Date(today.setHours(23, 59, 59, 999));
+
       const todaysAppointments = await Appointment.find({
         patientId: _id,
-        date: { $gte: todayStart, $lt: todayEnd }
-      });
+        date: { $gte: todayStart, $lt: todayEnd },
+      })
+        .populate("doctorId", "specialization")
+        .populate("patientId", "name email");
 
-      // 5. Aggregate prescriptions for this patient
       const prescriptions = await Prescription.find({ patientId: _id })
         .populate("doctorId", "name specialization")
         .populate("patientId", "name email")
         .populate("appointmentId", "date timeSlot status");
-
-      // 6. Prepare the summary of appointments
-      const totalAppointments = appointments.reduce((acc, item) => acc + item.count, 0);
-      const cancelledAppointments = appointments.find(a => a._id === "cancelled")?.count || 0;
 
       dashboardData = {
         totalAppointments,
@@ -101,20 +97,19 @@ export const getDashboard = async (req, res) => {
         upcomingAppointments,
         cancelledAppointments,
         todaysAppointments,
-        prescriptions
+        prescriptions,
       };
+    }
 
-    } else if (role === "admin") {
-      // Admin's dashboard logic (already explained earlier)
-
+    // 🧑‍💼 ADMIN DASHBOARD (Extended)
+    else if (role === "admin") {
       const appointmentsAgg = await Appointment.aggregate([
         {
           $group: {
-            _id: "$status", 
+            _id: "$status",
             count: { $sum: 1 },
-            appointments: { $push: "$$ROOT" }
-          }
-        }
+          },
+        },
       ]);
 
       const totalAppointments = appointmentsAgg.reduce((acc, item) => acc + item.count, 0);
@@ -125,32 +120,110 @@ export const getDashboard = async (req, res) => {
       const totalPatients = await User.countDocuments({ role: "patient" });
       const totalDoctors = await User.countDocuments({ role: "doctor" });
 
+      // 🔹 Get all doctors with details
+      const doctors = await Doctor.find()
+        .populate("userId", "name email phone gender")
+        .select("specialization qualification experience isAvailable timings availableDays");
+
+      // 🔹 Get all patients (Users with role patient)
+      const patients = await User.find({ role: "patient" }).select("name email phone gender createdAt");
+
+      const appointments = await Appointment.find()
+        .populate({
+          path: "doctorId",
+          populate: {
+            path: "userId",
+            model: "User",
+            select: "name email phone",
+          },
+        })
+        .populate("patientId", "name email phone gender")
+        .sort({ date: -1 });
+
+      const prescriptions = await Prescription.find()
+        .populate({
+          path: "appointmentId",
+          populate: [
+            { path: "doctorId", populate: { path: "userId", select: "name email" } },
+            { path: "patientId", select: "name email phone" },
+          ],
+        })
+        .populate({
+          path: "doctorId",
+          populate: { path: "userId", select: "name email" },
+        })
+        .populate("patientId", "name email")
+        .sort({ createdAt: -1 });
+
       dashboardData = {
-        appointments: appointmentsAgg,
         summary: {
           totalAppointments,
           upcomingAppointments,
           completedAppointments,
           cancelledAppointments,
           totalPatients,
-          totalDoctors
-        }
+          totalDoctors,
+          totalPrescriptions: prescriptions.length,
+        },
+        details: {
+          appointments: appointments.map(a => ({
+            id: a._id,
+            date: a.date,
+            timeSlot: a.timeSlot,
+            status: a.status,
+            doctor: a.doctorId?.userId?.name || "Unknown Doctor",
+            patient: a.patientId?.name || "Unknown Patient",
+          })),
+          prescriptions: prescriptions.map(p => ({
+            id: p._id,
+            diagnosis: p.diagnosis,
+            notes: p.notes,
+            medicines: p.medicines,
+            doctor: p.doctorId?.userId?.name || "Unknown Doctor",
+            patient: p.patientId?.name || "Unknown Patient",
+            appointmentDate: p.appointmentId?.date || null,
+            createdAt: p.createdAt,
+          })),
+          doctors: doctors.map(d => ({
+            id: d._id,
+            name: d.userId?.name,
+            email: d.userId?.email,
+            phone: d.userId?.phone,
+            specialization: d.specialization,
+            qualification: d.qualification,
+            experience: d.experience,
+            availableDays: d.availableDays,
+            timings: d.timings,
+            isAvailable: d.isAvailable,
+          })),
+          patients: patients.map(p => ({
+            id: p._id,
+            name: p.name,
+            email: p.email,
+            phone: p.phone,
+            gender: p.gender,
+            createdAt: p.createdAt,
+          })),
+        },
       };
-    } else {
+    }
+
+    else {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
     return res.status(200).json({
       success: true,
       role,
-      data: dashboardData
+      data: dashboardData,
     });
 
   } catch (error) {
+    console.error("Dashboard Error:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching dashboard",
-      error: error.message
+      error: error.message,
     });
   }
 };
