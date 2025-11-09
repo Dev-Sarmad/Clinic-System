@@ -91,24 +91,69 @@ export const createAppointment = async (req, res) => {
   }
 };
 
+
 export const getAppointments = async (req, res) => {
   try {
-    const { role, _id } = req.user;
+    const role = req.user?.role || req.query.role;
+    const _id = req.user?._id || req.query._id;
 
     let filter = {};
-    if (role === "patient") filter.patientId = _id;
-    else if (role === "doctor") filter.doctorId = _id;
+    let populateOptions = [];
 
-    const appointments = await Appointment.find(filter)
-      .populate("doctorId", "specialization qualification")
-      .populate("patientId", "name email")
-      .populate("roomId", "roomNumber");
+    if (role === "patient") {
+      filter.patientId = _id;
+      populateOptions = [
+        {
+          path: "doctorId",
+          select: "specialization qualification userId",
+          populate: { path: "userId", select: "name email role" },
+        },
+        { path: "roomId", select: "roomNumber" },
+      ];
+    } 
+    
+    else if (role === "doctor") {
+      const doctor = await Doctor.findOne({ userId: _id });
+      if (!doctor) {
+        return res.status(404).json({
+          success: false,
+          message: "Doctor profile not found for this user",
+        });
+      }
+
+      filter.doctorId = doctor._id;
+
+      populateOptions = [
+        { path: "patientId", select: "name email role" },
+        { path: "roomId", select: "roomNumber" },
+      ];
+    } 
+    
+    else if (role === "admin") {
+      // Admin: can see everything
+      populateOptions = [
+        {
+          path: "doctorId",
+          select: "specialization qualification userId",
+          populate: { path: "userId", select: "name email" },
+        },
+        { path: "patientId", select: "name email" },
+        { path: "roomId", select: "roomNumber" },
+      ];
+    }
+
+    // Build query
+    let query = Appointment.find(filter);
+    populateOptions.forEach(p => query.populate(p));
+
+    const appointments = await query.exec();
 
     return res.status(200).json({
       success: true,
       appointments,
     });
   } catch (error) {
+    console.error("Error fetching appointments:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching appointments",
@@ -117,12 +162,13 @@ export const getAppointments = async (req, res) => {
   }
 };
 
+
 export const getAppointmentById = async (req, res) => {
   try {
     const { id } = req.params;
 
     const appointment = await Appointment.findById(id)
-      .populate("doctorId", "specialization qualification timings ")
+      .populate("doctorId", "specialization qualification userId")
       .populate("patientId", "name email")
       .populate("roomId", "roomNumber");
 

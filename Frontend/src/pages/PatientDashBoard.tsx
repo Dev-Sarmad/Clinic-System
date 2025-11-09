@@ -5,7 +5,8 @@ import PatientSidebar from "../components/PatientSidebar";
 import DoctorsList from "../components/DoctorList";
 import PrescriptionsView from "../components/PrescriptionView";
 import BookAppointment from "../components/BookAppointmenr";
-
+import { useAuth } from "../context/AuthContext";
+import useAppointments from "../hooks/useAppointment";
 type PatientView =
   | "dashboard"
   | "doctors"
@@ -32,35 +33,16 @@ interface Doctor {
   _id?: string;
 }
 
-interface Appointment {
-  id: string;
-  doctorName: string;
-  date: string;
-  time: string;
-  status: string;
-}
-
 export default function PatientDashboard() {
   const [currentView, setCurrentView] = useState<PatientView>("dashboard");
+  const { user } = useAuth();
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: "1",
-      doctorName: "Dr. Sarah Mitchell",
-      date: "2024-01-20",
-      time: "10:00 AM",
-      status: "confirmed",
-    },
-    {
-      id: "2",
-      doctorName: "Dr. James Chen",
-      date: "2024-01-25",
-      time: "2:30 PM",
-      status: "pending",
-    },
-  ]);
 
+  const { appointments, setAppointments, loading, error } = useAppointments(
+    user?._id,
+    user?.role
+  );
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([
     {
       id: "1",
@@ -144,7 +126,9 @@ export default function PatientDashboard() {
         return (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-primary to-accent text-white rounded-lg p-8 shadow-md">
-              <h1 className="text-4xl font-bold mb-2">Welcome back, John!</h1>
+              <h1 className="text-4xl font-bold mb-2">
+                Welcome back, {user?.name}
+              </h1>
               <p className="text-lg opacity-90">
                 Your health is our priority. Manage your appointments and
                 prescriptions here.
@@ -204,22 +188,57 @@ export default function PatientDashboard() {
                 {appointments.length > 0 ? (
                   appointments.map((apt) => (
                     <div
-                      key={apt.id}
+                      key={apt._id}
                       className="flex items-center justify-between p-4 bg-muted rounded-lg"
                     >
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {apt.doctorName}
+                      <div className="p-4 bg-muted rounded-lg mb-4">
+                        {apt.doctorId?.userId?.role === "doctor" ? (
+                          // If logged-in user is doctor, show patient info
+                          <>
+                            <p className="font-semibold text-foreground">
+                              Doctor:{" "}
+                              {apt.doctorId?.userId.name ??
+                                "Patient data unavailable"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Email: {apt.doctorId?.userId.email ?? "-"}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-semibold text-foreground">
+                              Doctor:{" "}
+                              {apt.doctorId?.userId?.name ??
+                                "Doctor data unavailable"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Specialization:{" "}
+                              {apt.doctorId?.specialization ?? "-"}
+                            </p>
+                          </>
+                        )}
+
+                        <p className="text-sm text-muted-foreground">
+                          Date:{" "}
+                          {apt.date
+                            ? new Date(apt.date).toLocaleDateString()
+                            : "-"}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {apt.date} at {apt.time}
+                          Time: {apt.timeSlot?.start ?? "-"} -{" "}
+                          {apt.timeSlot?.end ?? "-"}
                         </p>
                       </div>
+
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          apt.status === "confirmed"
+                          apt.status === "scheduled"
                             ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
+                            : apt.status === "completed"
+                            ? "bg-blue-100 text-blue-800"
+                            : apt.status === "checked-in"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
                         }`}
                       >
                         {apt.status}
