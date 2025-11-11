@@ -1,5 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
+import apiClient from "../services/apiClient";
+import { useForm, Controller } from "react-hook-form";
 
 interface Doctor {
   id: string;
@@ -9,6 +10,11 @@ interface Doctor {
   experience?: number;
   email: string;
   phone?: string;
+  password: string;
+  role?: string;
+  availableDays?: string[];
+  isAvailable?: boolean;
+  timings?: { start: string; end: string };
 }
 
 export default function DoctorsManage({
@@ -18,61 +24,59 @@ export default function DoctorsManage({
   doctors: Doctor[];
   loading: boolean;
 }) {
-  // use local state to allow editing list without refetch
   const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors);
   const [showForm, setShowForm] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    specialization: "",
-    qualification: "",
-    experience: "",
-    email: "",
-    phone: "",
-  });
   const [submitting, setSubmitting] = useState(false);
 
-  /** ✅ Handle Add/Edit Submit */
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
+  const {
+    handleSubmit,
+    control,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      name: "",
+      specialization: "",
+      qualification: "",
+      experience:0,
+      email: "",
+      phone: "",
+      password: "",
+      role: "doctor",
+      availableDays: [] as string[],
+      isAvailable: true,
+      timings: { start: "", end: "" },
+    },
+  });
 
+  /** ✅ Handle Add/Edit Submit */
+  const onSubmit = async (formData: any) => {
+    setSubmitting(true);
+    const payload = {
+    ...formData,
+    experience: Number(formData.experience), 
+  };
     try {
       if (editingDoctor) {
-        // 🔹 Update doctor
-        const response = await axios.put(
-          `http://localhost:8000/api/doctors/${editingDoctor.id}`,
-          formData
+        const response = await apiClient.put(
+          `/doctors/${editingDoctor.id}`,
+          payload
         );
-
-        // update in local list
         setDoctors((prev) =>
           prev.map((doc) =>
             doc.id === editingDoctor.id ? response.data : doc
           )
         );
       } else {
-        // 🔹 Add new doctor
-        const response = await axios.post(
-          "http://localhost:8000/api/doctors",
-          formData
-        );
-
-        // append to local list
-        setDoctors((prev) => [...prev, response.data]);
+        const response = await apiClient.post("/doctors", payload);
+        setDoctors((prev) => [...prev, response.data.doctor]);
       }
 
-      // reset form
       setShowForm(false);
       setEditingDoctor(null);
-      setFormData({
-        name: "",
-        specialization: "",
-        qualification: "",
-        experience: "",
-        email: "",
-        phone: "",
-      });
+      reset();
     } catch (error: any) {
       console.error("[DoctorsManage] Error saving doctor:", error.message);
       alert("Error saving doctor. Check console for details.");
@@ -81,14 +85,10 @@ export default function DoctorsManage({
     }
   };
 
-  /** ✅ Handle Delete Doctor */
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this doctor?")) return;
-
     try {
-      await axios.delete(`http://localhost:8000/api/doctors/${id}`);
-
-      // remove doctor locally
+      await apiClient.delete(`/doctors/${id}`);
       setDoctors((prev) => prev.filter((doc) => doc.id !== id));
     } catch (error: any) {
       console.error("[DoctorsManage] Error deleting doctor:", error.message);
@@ -96,32 +96,28 @@ export default function DoctorsManage({
     }
   };
 
-  /** ✅ Handle Edit Click */
   const handleEdit = (doctor: Doctor) => {
     setEditingDoctor(doctor);
-    setFormData({
+    reset({
       name: doctor.name || "",
       specialization: doctor.specialization || "",
       qualification: doctor.qualification || "",
-      experience: doctor.experience?.toString() || "",
+      experience: doctor.experience,
       email: doctor.email || "",
       phone: doctor.phone || "",
+      password: "",
+      role: doctor.role || "doctor",
+      availableDays: doctor.availableDays || [],
+      isAvailable: doctor.isAvailable ?? true,
+      timings: doctor.timings || { start: "", end: "" },
     });
     setShowForm(true);
   };
 
-  /** ✅ Handle Open Add Form */
   const openAddForm = () => {
     setShowForm(true);
     setEditingDoctor(null);
-    setFormData({
-      name: "",
-      specialization: "",
-      qualification: "",
-      experience: "",
-      email: "",
-      phone: "",
-    });
+    reset();
   };
 
   return (
@@ -140,34 +136,219 @@ export default function DoctorsManage({
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg border border-border p-6 w-full max-w-md">
+          <div className="bg-card rounded-lg border border-border p-6 w-full max-w-md overflow-y-auto max-h-[90vh]">
             <h3 className="text-lg font-bold text-foreground mb-4">
               {editingDoctor ? "Edit Doctor" : "Add New Doctor"}
             </h3>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {["name", "specialization", "qualification", "experience", "email", "phone"].map(
-                (field) => (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {/* Name */}
+              <Controller
+                name="name"
+                control={control}
+                rules={{ required: "Name is required" }}
+                render={({ field }) => (
                   <input
-                    key={field}
-                    type={
-                      field === "email"
-                        ? "email"
-                        : field === "experience"
-                        ? "number"
-                        : "text"
-                    }
-                    placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                    value={(formData as any)[field]}
-                    onChange={(e) =>
-                      setFormData({ ...formData, [field]: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
+                    {...field}
+                    placeholder="Name"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground"
                   />
-                )
+                )}
+              />
+              {errors.name && (
+                <span className="text-red-500 text-sm">{errors.name.message}</span>
               )}
 
+              {/* Email */}
+              <Controller
+                name="email"
+                control={control}
+                rules={{
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: "Invalid email address",
+                  },
+                }}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="email"
+                    placeholder="Email"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground"
+                  />
+                )}
+              />
+              {errors.email && (
+                <span className="text-red-500 text-sm">{errors.email.message}</span>
+              )}
+
+              {/* Password */}
+              <Controller
+                name="password"
+                control={control}
+                rules={{ required: "Password is required" }}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="password"
+                    placeholder="Password"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground"
+                  />
+                )}
+              />
+              {errors.password && (
+                <span className="text-red-500 text-sm">
+                  {errors.password.message}
+                </span>
+              )}
+
+              {/* Specialization */}
+              <Controller
+                name="specialization"
+                control={control}
+                rules={{ required: "Specialization is required" }}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    placeholder="Specialization"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground"
+                  />
+                )}
+              />
+
+              {/* Qualification */}
+              <Controller
+                name="qualification"
+                control={control}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    placeholder="Qualification"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground"
+                  />
+                )}
+              />
+
+              {/* Experience */}
+              <Controller
+                name="experience"
+                control={control}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    placeholder="Experience (years)"
+                    type="number"
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground"
+                  />
+                )}
+              />
+
+              {/* Role (fixed doctor) */}
+              <Controller
+                name="role"
+                control={control}
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground"
+                  >
+                    <option value="doctor">Doctor</option>
+                  </select>
+                )}
+              />
+
+              {/* Availability toggle */}
+              <Controller
+                name="isAvailable"
+                control={control}
+                render={({ field }) => (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                    />
+                    <span>Available</span>
+                  </label>
+                )}
+              />
+
+              {/* Available Days */}
+              <div>
+                <label className="block font-medium mb-2 text-foreground">
+                  Available Days:
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                  ].map((day) => (
+                    <Controller
+                      key={day}
+                      name="availableDays"
+                      control={control}
+                      render={({ field }) => (
+                        <label className="flex items-center space-x-1">
+                          <input
+                            type="checkbox"
+                            value={day}
+                            checked={field.value.includes(day)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              const newDays = checked
+                                ? [...field.value, day]
+                                : field.value.filter((d: string) => d !== day);
+                              field.onChange(newDays);
+                            }}
+                          />
+                          <span>{day}</span>
+                        </label>
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Timings */}
+              <div>
+                <label className="block font-medium mb-2 text-foreground">
+                  Timings:
+                </label>
+                <div className="flex gap-2">
+                  <Controller
+                    name="timings.start"
+                    control={control}
+                    rules={{ required: "Start time required" }}
+                    render={({ field }) => (
+                      <input
+                        {...field}
+                        type="time"
+                        className="flex-1 px-3 py-2 border border-border rounded-lg bg-input text-foreground"
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="timings.end"
+                    control={control}
+                    rules={{ required: "End time required" }}
+                    render={({ field }) => (
+                      <input
+                        {...field}
+                        type="time"
+                        className="flex-1 px-3 py-2 border border-border rounded-lg bg-input text-foreground"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
@@ -214,7 +395,13 @@ export default function DoctorsManage({
                     Specialization
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
-                    Experience
+                    Available
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                    Available Days
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                    Timings
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
                     Email
@@ -226,29 +413,34 @@ export default function DoctorsManage({
               </thead>
               <tbody className="divide-y divide-border">
                 {doctors.map((doctor) => (
-                  <tr key={doctor.id} className="hover:bg-muted transition-colors">
-                    <td className="px-6 py-4 text-foreground font-medium">
-                      {doctor.name}
+                  <tr
+                    key={doctor.id}
+                    className="hover:bg-muted transition-colors"
+                  >
+                    <td className="px-6 py-4">{doctor.name}</td>
+                    <td className="px-6 py-4">{doctor.specialization}</td>
+                    <td className="px-6 py-4">
+                      {doctor.isAvailable ? "Yes" : "No"}
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {doctor.specialization}
+                    <td className="px-6 py-4">
+                      {doctor.availableDays?.join(", ") || "-"}
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {doctor.experience} years
+                    <td className="px-6 py-4">
+                      {doctor.timings
+                        ? `${doctor.timings.start} - ${doctor.timings.end}`
+                        : "-"}
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {doctor.email}
-                    </td>
+                    <td className="px-6 py-4">{doctor.email}</td>
                     <td className="px-6 py-4 flex gap-2">
                       <button
                         onClick={() => handleEdit(doctor)}
-                        className="px-3 py-1 bg-blue-500/10 text-blue-600 rounded hover:bg-blue-500/20 transition-colors text-sm font-medium"
+                        className="px-3 py-1 bg-blue-500/10 text-blue-600 rounded hover:bg-blue-500/20 text-sm"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(doctor.id)}
-                        className="px-3 py-1 bg-red-500/10 text-red-600 rounded hover:bg-red-500/20 transition-colors text-sm font-medium"
+                        className="px-3 py-1 bg-red-500/10 text-red-600 rounded hover:bg-red-500/20 text-sm"
                       >
                         Delete
                       </button>

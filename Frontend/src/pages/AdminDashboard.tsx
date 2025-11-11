@@ -6,6 +6,7 @@ import PatientAppointments from "../components/PatientAppointments";
 import PrescriptionsManagement from "../components/PrescriptionsManagement";
 import PatientsManage from "../components/PatientManage";
 import DoctorsManage from "../components/DoctorManage";
+import type { SummaryStats } from "../Types/Types";
 
 export interface Doctor {
   id: string;
@@ -108,6 +109,7 @@ export default function AdminDashboard() {
               {activeTab === "doctors" && "Doctors Management"}
               {activeTab === "patients" && "Patients Management"}
               {activeTab === "appointments" && "Patient Appointments"}
+              {activeTab === "prescriptions" && "Patient Prescriptions"}
             </h1>
             <div className="flex items-center gap-4">
               <button className="p-2 hover:bg-muted rounded-lg transition-colors">

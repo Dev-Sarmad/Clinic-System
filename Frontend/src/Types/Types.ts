@@ -3,10 +3,10 @@ export interface Appointment {
   doctorId: string;
   patientId: string;
   roomId: string;
-  date: string; // ISO string
+  date: string; 
   timeSlot: {
-    start: string; // e.g. "09:00"
-    end: string;   // e.g. "10:00"
+    start: string;
+    end: string;  
   };
   status: "scheduled" | "completed" | "cancelled";
   __v?: number;

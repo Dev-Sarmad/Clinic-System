@@ -6,6 +6,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }) {
     { id: "doctors", label: "Doctors", icon: "👨‍⚕️" },
     { id: "patients", label: "Patients", icon: "👥" },
     { id: "appointments", label: "Appointments", icon: "📆" },
+    { id: "prescriptions", label: "Prescriptions", icon: "📝" },
   ]
 
   return (

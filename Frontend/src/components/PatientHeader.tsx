@@ -1,10 +1,7 @@
 import { useAuth } from "../context/AuthContext";
 
-interface PatientHeaderProps {
-  onLogout: () => void;
-}
 
-export default function PatientHeader({ onLogout }: PatientHeaderProps) {
+export default function PatientHeader() {
   const { user, logout } = useAuth();
   return (
     <header className="bg-card border-b border-border shadow-sm sticky top-0 z-40">
