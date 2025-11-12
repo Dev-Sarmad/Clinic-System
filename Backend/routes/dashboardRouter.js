@@ -4,6 +4,6 @@ import { authorizeRoles } from "../middlewares/authMiddleware.js";
 
 const dashboardRouter = express.Router()
 
-dashboardRouter.get("/dashboard",authorizeRoles("admin") ,getDashboard)
+dashboardRouter.get("/dashboard",authorizeRoles("admin", "doctor", "patient") ,getDashboard)
 
 export default dashboardRouter

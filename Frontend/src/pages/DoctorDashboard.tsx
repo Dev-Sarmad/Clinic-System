@@ -3,8 +3,8 @@ import DoctorInfo from "../components/DoctorInfo"
 import DoctorHeader from "../components/DoctorHeader"
 import AppointmentsList from "../components/AppointmentList"
 import PrescriptionModal from "../components/PrescriptionModel"
-import { Link } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
+import useAppointments from "../hooks/useAppointment"
 interface Appointment {
   id: string
   patientName: string
@@ -17,41 +17,9 @@ interface Appointment {
 
 
 export default function DoctorDashboard() {
+  const {user} = useAuth()
   const {logout} = useAuth()
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: "1",
-      patientName: "Sarah Johnson",
-      patientAge: 32,
-      condition: "Hypertension",
-      appointmentTime: "10:00 AM",
-      status: "completed",
-    },
-    {
-      id: "2",
-      patientName: "Michael Chen",
-      patientAge: 45,
-      condition: "Type 2 Diabetes",
-      appointmentTime: "11:30 AM",
-      status: "in-progress",
-    },
-    {
-      id: "3",
-      patientName: "Emma Wilson",
-      patientAge: 28,
-      condition: "Common Cold",
-      appointmentTime: "2:00 PM",
-      status: "pending",
-    },
-    {
-      id: "4",
-      patientName: "James Brown",
-      patientAge: 55,
-      condition: "Arthritis",
-      appointmentTime: "3:30 PM",
-      status: "pending",
-    },
-  ])
+  const {appointments, setAppointments} = useAppointments(user?._id, user?.role)
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)

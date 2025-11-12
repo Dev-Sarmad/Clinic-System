@@ -7,6 +7,7 @@ import PrescriptionsView from "../components/PrescriptionView";
 import BookAppointment from "../components/BookAppointmenr";
 import { useAuth } from "../context/AuthContext";
 import useAppointments from "../hooks/useAppointment";
+import useSubmitPrescription from "../hooks/usePrescriptions";
 type PatientView =
   | "dashboard"
   | "doctors"
@@ -38,35 +39,25 @@ export default function PatientDashboard() {
   const { user } = useAuth();
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const {getPrescriptions} = useSubmitPrescription()
 
   const { appointments, setAppointments, loading, error } = useAppointments(
     user?._id,
     user?.role
   );
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([
-    {
-      id: "1",
-      doctorName: "Dr. Sarah Mitchell",
-      date: "2024-01-15",
-      medications: [
-        "Aspirin 100mg - Once daily",
-        "Lisinopril 10mg - Twice daily",
-        "Atorvastatin 20mg - Once at night",
-      ],
-      notes: "Continue for 30 days. Avoid grapefruit juice.",
-    },
-    {
-      id: "2",
-      doctorName: "Dr. Michael Brown",
-      date: "2024-01-10",
-      medications: [
-        "Metformin 500mg - Twice daily with meals",
-        "Vitamin D 1000IU - Once daily",
-      ],
-      notes: "Monitor blood sugar levels. Schedule follow-up in 2 weeks.",
-    },
-  ]);
-
+  
+useEffect(() => {
+    const fetchPrescriptions = async () => {
+      try {
+        const data = await getPrescriptions();
+        setPrescriptions(data);
+      } catch (err) {
+        console.error("Error fetching prescriptions:", err);
+      }
+    };
+    fetchPrescriptions();
+  }, []);
   useEffect(() => {
     const fetchDoctors = async () => {
       try {

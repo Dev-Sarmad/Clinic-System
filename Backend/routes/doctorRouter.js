@@ -4,7 +4,7 @@ import {
   deleteDoctor,
   getDoctorById,
   getDoctors,
-  updateDoctor
+  updateDoctor,
 } from "../controllers/doctorController.js";
 import authenticationMiddleware, {
   authorizeRoles,
@@ -26,7 +26,7 @@ doctorRouter.delete(
   authorizeRoles("admin"),
   deleteDoctor
 );
-doctorRouter.delete(
+doctorRouter.put(
   "/:id",
   authenticationMiddleware,
   authorizeRoles("admin"),

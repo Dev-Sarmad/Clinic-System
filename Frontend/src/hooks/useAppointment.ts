@@ -47,15 +47,24 @@ const useAppointments = (
 ) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(String);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get(`/appointments`, {
-          params: { _id, role },
-        });
+        let response;
+        if (role === "doctor") {
+          response = await apiClient.get(`/appointments`, {
+            params: { doctorId: _id, role },
+          });
+        } else if (role === "patient") {
+          response = await apiClient.get(`/appointments`, {
+            params: { patientId: _id, role },
+          });
+        } else {
+          response = await apiClient.get(`/appointments`);
+        }
 
         if (response.data.success) {
           setAppointments(response.data.appointments);
@@ -74,5 +83,6 @@ const useAppointments = (
 
   return { appointments, setAppointments, loading, error };
 };
+
 
 export default useAppointments;

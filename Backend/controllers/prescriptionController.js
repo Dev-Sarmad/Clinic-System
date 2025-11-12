@@ -1,14 +1,19 @@
 import Prescription from "../models/prescriptionModel.js";
 import Appointment from "../models/appointmentModel.js";
-import Doctor from "../models/doctorModel.js"
+import Doctor from "../models/doctorModel.js";
 
 export const createPrescription = async (req, res) => {
   try {
-    const userId = req.user._id; 
+    const userId = req.user._id;
     const { appointmentId, diagnosis, notes, medicines } = req.body;
 
     if (req.user.role !== "doctor") {
-      return res.status(403).json({ success: false, message: "Only doctors can create prescriptions" });
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "Only doctors can create prescriptions",
+        });
     }
 
     const doctor = await Doctor.findOne({ userId });
@@ -21,7 +26,9 @@ export const createPrescription = async (req, res) => {
 
     const appointment = await Appointment.findById(appointmentId);
     if (!appointment) {
-      return res.status(404).json({ success: false, message: "Appointment not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Appointment not found" });
     }
 
     if (appointment.doctorId.toString() !== doctor._id.toString()) {
@@ -62,7 +69,9 @@ export const updatePrescription = async (req, res) => {
 
     const prescription = await Prescription.findById(id);
     if (!prescription) {
-      return res.status(404).json({ success: false, message: "Prescription not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Prescription not found" });
     }
 
     if (prescription.doctorId.toString() !== doctorId.toString()) {
@@ -107,7 +116,10 @@ export const getPrescriptions = async (req, res) => {
 
     const prescriptions = await Prescription.find(filter)
       .populate("appointmentId", "date timeSlot status")
-      .populate("doctorId", "name specialization")
+      .populate({
+        path: "doctorId", 
+        populate: { path: "userId", select: "name email specialization " }, 
+      })
       .populate("patientId", "name email");
 
     return res.status(200).json({
@@ -123,7 +135,6 @@ export const getPrescriptions = async (req, res) => {
   }
 };
 
-
 export const getPrescriptionById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -131,11 +142,16 @@ export const getPrescriptionById = async (req, res) => {
 
     const prescription = await Prescription.findById(id)
       .populate("appointmentId", "date timeSlot status")
-      .populate("doctorId", "name specialization")
-      .populate("patientId", "name email");
+      .populate("patientId", "name email")
+      .populate({
+        path: "doctorId",
+        populate: { path: "userId", select: "name email specialization" }, // nested populate
+      });
 
     if (!prescription) {
-      return res.status(404).json({ success: false, message: "Prescription not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Prescription not found" });
     }
 
     if (

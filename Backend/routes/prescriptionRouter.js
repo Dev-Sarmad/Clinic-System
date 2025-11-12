@@ -12,7 +12,7 @@ const prescriptionRouter = express.Router();
 prescriptionRouter.post("/", authorizeRoles("doctor"), createPrescription);
 prescriptionRouter.get(
   "/",
-  authorizeRoles("doctor"),
+  authorizeRoles("doctor", "patient"),
   getPrescriptions
 );
 prescriptionRouter.put("/:id", authorizeRoles("doctor"), updatePrescription);

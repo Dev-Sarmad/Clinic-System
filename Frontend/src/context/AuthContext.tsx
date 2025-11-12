@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         setUser(JSON.parse(storedUser));
         setToken(storedToken);
+       // automatically include this Authorization header with every HTTP request.
         axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
       } catch {
         localStorage.removeItem("user");
