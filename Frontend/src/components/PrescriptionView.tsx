@@ -1,14 +1,17 @@
-import React, { useState } from "react";
+import  { useState } from "react";
 import usePrescriptions from "../hooks/usePrescriptions";
-import type {Prescription} from "../hooks/usePrescriptions"
+import type { Prescription } from "../hooks/usePrescriptions";
 interface PrescriptionsViewProps {
   prescriptions: Prescription[];
 }
 
-export default function PrescriptionsView({ prescriptions }: PrescriptionsViewProps) {
+export default function PrescriptionsView({
+  prescriptions,
+}: PrescriptionsViewProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { getPrescriptionById, loading } = usePrescriptions();
-  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
+  const [selectedPrescription, setSelectedPrescription] =
+    useState<Prescription | null>(null);
 
   const handleExpand = async (id: string) => {
     if (expandedId === id) {
@@ -27,7 +30,9 @@ export default function PrescriptionsView({ prescriptions }: PrescriptionsViewPr
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
           <span>💊</span>Your Prescriptions
         </h2>
-        <p className="text-muted-foreground">View all prescriptions from your doctors</p>
+        <p className="text-muted-foreground">
+          View all prescriptions from your doctors
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -46,7 +51,10 @@ export default function PrescriptionsView({ prescriptions }: PrescriptionsViewPr
                     {prescription.doctorId?.userId.name || "Unknown Doctor"}
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    📅 {new Date(prescription.createdAt || "").toLocaleDateString()}
+                    📅{" "}
+                    {new Date(
+                      prescription.createdAt || ""
+                    ).toLocaleDateString()}
                   </p>
                   <p className="text-sm text-accent font-medium mt-2">
                     {prescription.medicines.length} medications
@@ -86,7 +94,10 @@ export default function PrescriptionsView({ prescriptions }: PrescriptionsViewPr
                         </h4>
                         <ul className="space-y-2">
                           {selectedPrescription.medicines.map((med, idx) => (
-                            <li key={idx} className="flex items-center gap-3 text-foreground">
+                            <li
+                              key={idx}
+                              className="flex items-center gap-3 text-foreground"
+                            >
                               <span className="w-2 h-2 bg-primary rounded-full"></span>
                               {med.name} – {med.dosage} – {med.duration}
                             </li>
@@ -102,9 +113,21 @@ export default function PrescriptionsView({ prescriptions }: PrescriptionsViewPr
                           {selectedPrescription.notes || "No notes provided."}
                         </p>
                       </div>
+                      <div>
+                        <h4 className="font-bold text-foreground mb-2 flex items-center gap-2">
+                          <span>🧷</span>
+                          diagnosis
+                        </h4>
+                        <p className="text-sm text-muted-foreground bg-background p-3 rounded-lg">
+                          {selectedPrescription.diagnosis ||
+                            "No notes provided."}
+                        </p>
+                      </div>
                     </>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No details found.</p>
+                    <p className="text-sm text-muted-foreground">
+                      No details found.
+                    </p>
                   )}
                 </div>
               )}

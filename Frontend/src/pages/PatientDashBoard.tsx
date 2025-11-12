@@ -20,6 +20,7 @@ interface Prescription {
   date: string;
   medications: string[];
   notes: string;
+  diagnosis: string
 }
 
 interface Doctor {
@@ -40,13 +41,12 @@ export default function PatientDashboard() {
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const {getPrescriptions} = useSubmitPrescription()
+  const {getPrescriptions, error: ErrorPrescription, message, loading:prescriptionLoading} = useSubmitPrescription()
 
-  const { appointments, setAppointments, loading, error } = useAppointments(
+  const { appointments, setAppointments, loading: appointmentLoading, error: ErrorAppointment } = useAppointments(
     user?._id,
     user?.role
   );
-  
 useEffect(() => {
     const fetchPrescriptions = async () => {
       try {
@@ -116,6 +116,8 @@ useEffect(() => {
       default:
         return (
           <div className="space-y-6">
+            <p>{ErrorPrescription.message || ErrorAppointment.message}</p>
+
             <div className="bg-gradient-to-r from-primary to-accent text-white rounded-lg p-8 shadow-md">
               <h1 className="text-4xl font-bold mb-2">
                 Welcome back, {user?.name}

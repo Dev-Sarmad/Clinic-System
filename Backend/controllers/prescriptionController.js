@@ -8,12 +8,10 @@ export const createPrescription = async (req, res) => {
     const { appointmentId, diagnosis, notes, medicines } = req.body;
 
     if (req.user.role !== "doctor") {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Only doctors can create prescriptions",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Only doctors can create prescriptions",
+      });
     }
 
     const doctor = await Doctor.findOne({ userId });
@@ -37,7 +35,18 @@ export const createPrescription = async (req, res) => {
         message: "You can only prescribe for your own appointments",
       });
     }
+    const existing = await Prescription.findOne({
+      doctorId: doctor._id,
+      patientId: appointment.patientId,
+      appointmentId,
+    });
 
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: "Prescription already exists for this appointment.",
+      });
+    }
     const prescription = await Prescription.create({
       appointmentId,
       doctorId: doctor._id,
@@ -117,8 +126,8 @@ export const getPrescriptions = async (req, res) => {
     const prescriptions = await Prescription.find(filter)
       .populate("appointmentId", "date timeSlot status")
       .populate({
-        path: "doctorId", 
-        populate: { path: "userId", select: "name email specialization " }, 
+        path: "doctorId",
+        populate: { path: "userId", select: "name email specialization " },
       })
       .populate("patientId", "name email");
 
