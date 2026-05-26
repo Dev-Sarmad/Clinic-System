@@ -17,10 +17,13 @@ app.use(
   cors({
     credentials: true,
     origin: "http://localhost:5173",
-  })
+  }),
 );
 
 app.use(cookieParser());
+app.use("/start", (req, res) => {
+  res.json({ message: "welcome to hospital management system" });
+});
 
 app.use("/api/auth", authRouter);
 app.use("/api/doctors", doctorRouter);
@@ -29,7 +32,7 @@ app.use("/api/appointments", authenticationMiddleware, appointmentRouter);
 app.use(
   "/api/doctor/prescription",
   authenticationMiddleware,
-  prescriptionRouter
+  prescriptionRouter,
 );
 app.use("/api/", authenticationMiddleware, dashboardRouter);
 
