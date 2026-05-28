@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import axios from "axios";
+import apiClient from "../services/apiClient";
 
 export type User = {
   _id: string;
@@ -31,8 +32,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         setUser(JSON.parse(storedUser));
         setToken(storedToken);
-       // automatically include this Authorization header with every HTTP request.
+        // automatically include this Authorization header with every HTTP request.
         axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+        apiClient.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
       } catch {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
@@ -47,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("token", token);
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   };
 
   const signup = (userData: User, token: string) => {
@@ -59,6 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     delete axios.defaults.headers.common["Authorization"];
+    delete apiClient.defaults.headers.common["Authorization"];
   };
 
   return (
