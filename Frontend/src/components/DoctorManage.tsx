@@ -10,7 +10,7 @@ interface Doctor {
   experience?: number;
   email: string;
   phone?: string;
-  password: string;
+  password?: string;
   role?: string;
   availableDays?: string[];
   isAvailable?: boolean;
@@ -33,14 +33,13 @@ export default function DoctorsManage({
     handleSubmit,
     control,
     reset,
-    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
       name: "",
       specialization: "",
       qualification: "",
-      experience:0,
+      experience: 0,
       email: "",
       phone: "",
       password: "",
@@ -55,19 +54,19 @@ export default function DoctorsManage({
   const onSubmit = async (formData: any) => {
     setSubmitting(true);
     const payload = {
-    ...formData,
-    experience: Number(formData.experience), 
-  };
+      ...formData,
+      experience: Number(formData.experience),
+    };
     try {
       if (editingDoctor) {
         const response = await apiClient.put(
           `/doctors/${editingDoctor.id}`,
-          payload
+          payload,
         );
         setDoctors((prev) =>
           prev.map((doc) =>
-            doc.id === editingDoctor.id ? response.data : doc
-          )
+            doc.id === editingDoctor.id ? response.data : doc,
+          ),
         );
       } else {
         const response = await apiClient.post("/doctors", payload);
@@ -156,7 +155,9 @@ export default function DoctorsManage({
                 )}
               />
               {errors.name && (
-                <span className="text-red-500 text-sm">{errors.name.message}</span>
+                <span className="text-red-500 text-sm">
+                  {errors.name.message}
+                </span>
               )}
 
               {/* Email */}
@@ -180,7 +181,9 @@ export default function DoctorsManage({
                 )}
               />
               {errors.email && (
-                <span className="text-red-500 text-sm">{errors.email.message}</span>
+                <span className="text-red-500 text-sm">
+                  {errors.email.message}
+                </span>
               )}
 
               {/* Password */}
@@ -358,8 +361,8 @@ export default function DoctorsManage({
                   {submitting
                     ? "Saving..."
                     : editingDoctor
-                    ? "Update"
-                    : "Create"}
+                      ? "Update"
+                      : "Create"}
                 </button>
                 <button
                   type="button"

@@ -1,46 +1,29 @@
-import { useState } from "react"
-import DoctorInfo from "../components/DoctorInfo"
-import DoctorHeader from "../components/DoctorHeader"
-import AppointmentsList from "../components/AppointmentList"
-import PrescriptionModal from "../components/PrescriptionModel"
-import { useAuth } from "../context/AuthContext"
-import useAppointments from "../hooks/useAppointment"
-interface Appointment {
-  id: string
-  patientName: string
-  patientAge: number
-  condition: string
-  appointmentTime: string
-  status: "scheduled" | "check-in" | "completed" | "canceled"
-}
-
-
+import DoctorInfo from "../components/DoctorInfo";
+import DoctorHeader from "../components/DoctorHeader";
+import AppointmentsList from "../components/AppointmentList";
+import { useAuth } from "../context/AuthContext";
+import useAppointments from "../hooks/useAppointment";
+import type { Appointment as AppointmentData } from "../hooks/useAppointment";
 
 export default function DoctorDashboard() {
-  const {user} = useAuth()
-  const {logout} = useAuth()
-  const {appointments, setAppointments} = useAppointments(user?._id, user?.role)
+  const { user, logout } = useAuth();
+  const { appointments, setAppointments } = useAppointments(
+    user?._id,
+    user?.role,
+  );
 
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
-  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
-  const [prescriptions, setPrescriptions] = useState<Record<string, string[]>>({})
-
-  const handlePrescribe = (appointmentId: string) => {
-    const appointment = appointments.find((a) => a.id === appointmentId)
-    setSelectedAppointment(appointment || null)
-    setShowPrescriptionModal(true)
-  }
-
-  const handleSavePrescription = (medications: string[]) => {
-    if (selectedAppointment) {
-      setPrescriptions({
-        ...prescriptions,
-        [selectedAppointment.id]: medications,
-      })
-      setAppointments(appointments.map((a) => (a.id === selectedAppointment.id ? { ...a, status: "completed" } : a)))
-      setShowPrescriptionModal(false)
-    }
-  }
+  const handleUpdateStatus = (
+    appointmentId: string,
+    status: AppointmentData["status"],
+  ) => {
+    setAppointments(
+      appointments.map((appointment) =>
+        appointment._id === appointmentId
+          ? { ...appointment, status }
+          : appointment,
+      ),
+    );
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -82,7 +65,6 @@ export default function DoctorDashboard() {
           </a>
           <button
             className="flex cursor-pointer items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors hover:bg-primary-foreground/20"
-            
             onClick={logout}
           >
             <span className="text-lg">⚙️</span>
@@ -103,14 +85,18 @@ export default function DoctorDashboard() {
             </div>
             <div className="space-y-4">
               <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-                <p className="text-muted-foreground text-sm">Total Appointments</p>
+                <p className="text-muted-foreground text-sm">
+                  Total Appointments
+                </p>
                 <p className="text-3xl font-bold text-primary mt-2">24</p>
                 <p className="text-xs text-muted-foreground mt-2">This week</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
                 <p className="text-muted-foreground text-sm">Completed Today</p>
                 <p className="text-3xl font-bold text-accent mt-2">8</p>
-                <p className="text-xs text-muted-foreground mt-2">of 12 scheduled</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  of 12 scheduled
+                </p>
               </div>
             </div>
           </div>
@@ -123,20 +109,13 @@ export default function DoctorDashboard() {
                 Today's Appointments
               </h2>
             </div>
-            <AppointmentsList appointments={appointments} onPrescribe={handlePrescribe} prescriptions={prescriptions} />
+            <AppointmentsList
+              appointments={appointments}
+              onUpdateStatus={handleUpdateStatus}
+            />
           </div>
         </main>
       </div>
-
-      {/* Prescription Modal */}
-      {showPrescriptionModal && selectedAppointment && (
-        <PrescriptionModal
-          appointment={selectedAppointment}
-          onClose={() => setShowPrescriptionModal(false)}
-          onSave={handleSavePrescription}
-          existingPrescriptions={prescriptions[selectedAppointment.id] || []}
-        />
-      )}
     </div>
-  )
+  );
 }

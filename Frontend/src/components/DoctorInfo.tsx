@@ -11,19 +11,19 @@ interface Doctor {
 }
 
 export default function DoctorInfo() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDoctorInfo = async () => {
       try {
-        if (!user?._id) return;
+        if (!user?._id || !token) return;
         const res = await axios.get(
           `http://localhost:8000/api/doctors/${user._id}`,
           {
-            headers: { Authorization: `Bearer ${user.token}` },
-          }
+            headers: { Authorization: `Bearer ${token}` },
+          },
         );
         const data = res.data;
         if (data.success) {
@@ -73,7 +73,9 @@ export default function DoctorInfo() {
         </div>
 
         <div className="text-right">
-          <p className="text-xs text-muted-foreground">{doctor.qualification}</p>
+          <p className="text-xs text-muted-foreground">
+            {doctor.qualification}
+          </p>
         </div>
       </div>
 

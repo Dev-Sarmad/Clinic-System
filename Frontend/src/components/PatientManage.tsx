@@ -1,5 +1,20 @@
+interface Patient {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | number;
+  gender?: string;
+}
 
-export default function PatientsManage({ patients, loading }) {
+interface PatientsManageProps {
+  patients: Patient[];
+  loading: boolean;
+}
+
+export default function PatientsManage({
+  patients,
+  loading,
+}: PatientsManageProps) {
   if (loading) return <p>Loading patients...</p>;
 
   return (

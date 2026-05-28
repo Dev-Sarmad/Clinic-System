@@ -27,7 +27,7 @@ export interface Patient {
   id: string;
   name: string;
   email: string;
-  phone?: number;
+  phone?: string | number;
   gender?: string;
 }
 
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
     } catch (error: any) {
       console.error(
         "[DashboardStats] Error fetching statistics:",
-        error.message
+        error.message,
       );
     } finally {
       setLoading(false);

@@ -1,4 +1,20 @@
-export default function PrescriptionsManagement({ prescriptions, loading }) {
+interface PrescriptionItem {
+  id: string;
+  doctor: string;
+  patient: string;
+  diagnosis: string;
+  createdAt: string;
+}
+
+interface PrescriptionsManagementProps {
+  prescriptions: PrescriptionItem[];
+  loading: boolean;
+}
+
+export default function PrescriptionsManagement({
+  prescriptions,
+  loading,
+}: PrescriptionsManagementProps) {
   if (loading) return <p>Loading prescriptions...</p>;
 
   return (
@@ -19,7 +35,9 @@ export default function PrescriptionsManagement({ prescriptions, loading }) {
               <td className="px-4 py-2">{p.doctor}</td>
               <td className="px-4 py-2">{p.patient}</td>
               <td className="px-4 py-2">{p.diagnosis}</td>
-              <td className="px-4 py-2">{new Date(p.createdAt).toLocaleDateString()}</td>
+              <td className="px-4 py-2">
+                {new Date(p.createdAt).toLocaleDateString()}
+              </td>
             </tr>
           ))}
         </tbody>

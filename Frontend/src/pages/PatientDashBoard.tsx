@@ -8,25 +8,18 @@ import BookAppointment from "../components/BookAppointmenr";
 import { useAuth } from "../context/AuthContext";
 import useAppointments from "../hooks/useAppointment";
 import useSubmitPrescription from "../hooks/usePrescriptions";
+import type { Prescription } from "../hooks/usePrescriptions";
+
 type PatientView =
   | "dashboard"
   | "doctors"
   | "prescriptions"
   | "book-appointment";
 
-interface Prescription {
-  id: string;
-  doctorName: string;
-  date: string;
-  medications: string[];
-  notes: string;
-  diagnosis: string
-}
-
 interface Doctor {
   id: string;
   name: string;
-  specialty: string;
+  specialization: string;
   rating: number;
   experience: number;
   availability: string;
@@ -41,13 +34,14 @@ export default function PatientDashboard() {
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const {getPrescriptions, error: ErrorPrescription, message, loading:prescriptionLoading} = useSubmitPrescription()
+  const { getPrescriptions, error: ErrorPrescription } =
+    useSubmitPrescription();
 
-  const { appointments, setAppointments, loading: appointmentLoading, error: ErrorAppointment } = useAppointments(
+  const { appointments, error: ErrorAppointment } = useAppointments(
     user?._id,
-    user?.role
+    user?.role,
   );
-useEffect(() => {
+  useEffect(() => {
     const fetchPrescriptions = async () => {
       try {
         const data = await getPrescriptions();
@@ -76,19 +70,10 @@ useEffect(() => {
   };
 
   const handleBookAppointment = (
-    doctorId: string,
-    doctorName: string,
-    appointmentDate: string,
-    appointmentTime: string
+    _doctorId: string,
+    _appointmentDate: string,
+    _appointmentTime: string,
   ) => {
-    const newAppointment = {
-      id: String(appointments.length + 1),
-      doctorName: doctorName,
-      date: appointmentDate,
-      time: appointmentTime,
-      status: "scheduled",
-    };
-    setAppointments([...appointments, newAppointment]);
     setCurrentView("dashboard");
     setSelectedDoctorId(null);
   };
@@ -96,9 +81,7 @@ useEffect(() => {
   const renderView = () => {
     switch (currentView) {
       case "doctors":
-        return (
-          <DoctorsList doctors={doctors} onSelectDoctor={handleSelectDoctor} />
-        );
+        return <DoctorsList onSelectDoctor={handleSelectDoctor} />;
       case "prescriptions":
         return <PrescriptionsView prescriptions={prescriptions} />;
       case "book-appointment":
@@ -116,7 +99,7 @@ useEffect(() => {
       default:
         return (
           <div className="space-y-6">
-            <p>{ErrorPrescription.message || ErrorAppointment.message}</p>
+            <p>{ErrorPrescription || ErrorAppointment}</p>
 
             <div className="bg-gradient-to-r from-primary to-accent text-white rounded-lg p-8 shadow-md">
               <h1 className="text-4xl font-bold mb-2">
@@ -228,10 +211,10 @@ useEffect(() => {
                           apt.status === "scheduled"
                             ? "bg-green-100 text-green-800"
                             : apt.status === "completed"
-                            ? "bg-blue-100 text-blue-800"
-                            : apt.status === "checked-in"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
+                              ? "bg-blue-100 text-blue-800"
+                              : apt.status === "checked-in"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
                         }`}
                       >
                         {apt.status}
@@ -254,7 +237,7 @@ useEffect(() => {
     <div className="flex min-h-screen bg-background">
       <PatientSidebar currentView={currentView} onViewChange={setCurrentView} />
       <div className="flex-1 overflow-auto">
-        <PatientHeader onLogout={() => console.log("Logging out...")} />
+        <PatientHeader />
         <main className="p-8">{renderView()}</main>
       </div>
     </div>

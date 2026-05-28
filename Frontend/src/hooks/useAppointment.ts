@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import apiClient from "../services/apiClient";
 
-interface Appointment {
+export interface Appointment {
   _id: string;
   doctorId: DoctorInfo;
   patientId: PatientInfo | string; // Sometimes backend returns just the id
@@ -19,7 +19,7 @@ interface DoctorInfo {
     _id: string;
     name: string;
     email: string;
-    role:string
+    role: string;
   };
 }
 
@@ -27,7 +27,7 @@ interface PatientInfo {
   _id: string;
   name: string;
   email: string;
-  role:string
+  role: string;
 }
 
 interface RoomInfo {
@@ -40,10 +40,9 @@ interface TimeSlot {
   end: string;
 }
 
-
 const useAppointments = (
   _id: string | undefined,
-  role: "patient" | "doctor" | "admin" | undefined
+  role: "patient" | "doctor" | "admin" | undefined,
 ) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +82,5 @@ const useAppointments = (
 
   return { appointments, setAppointments, loading, error };
 };
-
 
 export default useAppointments;

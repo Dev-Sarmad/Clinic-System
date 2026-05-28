@@ -29,26 +29,35 @@ export interface Prescription {
   createdAt?: string;
 }
 
+export interface NewPrescription {
+  appointmentId: string;
+  doctorId: string;
+  patientId: string;
+  diagnosis: string;
+  notes?: string;
+  medicines: Medicine[];
+}
+
 export function useSubmitPrescription() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const submitPrescription = async (prescription: Prescription) => {
+  const submitPrescription = async (prescription: NewPrescription) => {
     setLoading(true);
     setError(null);
 
     try {
       const response = await apiClient.post(
         "/doctor/prescription",
-        prescription
+        prescription,
       );
       setMessage(response.data.message || "Prescription created successfully");
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       const backendMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
         "Failed to submit the prescription. Please try again.";
       setError(backendMsg);
       console.error(err);
@@ -61,9 +70,11 @@ export function useSubmitPrescription() {
       setLoading(true);
       const response = await apiClient.get("/doctor/prescription");
       return response.data.prescriptions;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching prescriptions:", err);
-      setError(err.response?.data?.message || "Failed to fetch prescriptions.");
+      setError(
+        err?.response?.data?.message || "Failed to fetch prescriptions.",
+      );
 
       return [];
     } finally {
@@ -71,16 +82,16 @@ export function useSubmitPrescription() {
     }
   };
   const getPrescriptionById = async (
-    id: string
+    id: string,
   ): Promise<Prescription | null> => {
     try {
       setLoading(true);
       const response = await apiClient.get(`/doctor/prescription/${id}`);
       return response.data.prescription;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching prescription:", err);
       setError(
-        err.response?.data?.message || "Failed to fetch prescription details."
+        err?.response?.data?.message || "Failed to fetch prescription details.",
       );
       return null;
     } finally {

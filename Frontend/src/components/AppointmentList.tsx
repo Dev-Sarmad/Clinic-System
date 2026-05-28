@@ -1,55 +1,81 @@
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useAuth } from "../context/AuthContext";
 import useSubmitPrescription from "../hooks/usePrescriptions";
+import type { NewPrescription } from "../hooks/usePrescriptions";
 
 const prescriptionSchema = yup
   .object({
     diagnosis: yup.string().required("Diagnosis is required"),
-    notes: yup.string().optional(),
-    medicines: yup.array().of(
-      yup.object({
-        name: yup.string().required("Medicine name is required"),
-        dosage: yup.string().required("Dosage is required"),
-        duration: yup.string().required("Duration is required"),
-      })
-    ),
+    notes: yup.string().required("Notes are required"),
+    medicines: yup
+      .array()
+      .of(
+        yup.object({
+          name: yup.string().required("Medicine name is required"),
+          dosage: yup.string().required("Dosage is required"),
+          duration: yup.string().required("Duration is required"),
+        }),
+      )
+      .required("At least one medicine is required"),
   })
   .required();
 
+interface Medicine {
+  name: string;
+  dosage: string;
+  duration: string;
+}
+
+interface PrescriptionFormValues {
+  diagnosis: string;
+  notes: string;
+  medicines: Medicine[];
+}
+
 interface Appointment {
   _id: string;
-  patientId: {
-    _id: string;
-    name: string;
-    email: string;
-  };
+  patientId:
+    | {
+        _id: string;
+        name: string;
+        email: string;
+      }
+    | string;
   timeSlot: {
     start: string;
     end: string;
   };
   date: string;
-  status: string;
+  status: "scheduled" | "completed" | "cancelled" | "checked-in";
 }
 
 interface AppointmentsListProps {
   appointments: Appointment[];
-  prescriptions: Record<string, string[]>;
-  onUpdateStatus: (appointmentId: string, status: string) => void;
+  onUpdateStatus: (
+    appointmentId: string,
+    status: Appointment["status"],
+  ) => void;
 }
 
 export default function AppointmentsList({
   appointments,
-  prescriptions,
   onUpdateStatus,
 }: AppointmentsListProps) {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
   const { user } = useAuth();
 
-  const { control, handleSubmit, reset, formState: { errors }, watch } = useForm({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    watch,
+  } = useForm<PrescriptionFormValues>({
     resolver: yupResolver(prescriptionSchema),
     defaultValues: {
       diagnosis: "",
@@ -58,7 +84,9 @@ export default function AppointmentsList({
     },
   });
 
-  const { submitPrescription, loading, error, message } = useSubmitPrescription();
+  const medicines = watch("medicines") as Medicine[];
+  const { submitPrescription, loading, error, message } =
+    useSubmitPrescription();
 
   const handlePrescribeClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
@@ -71,13 +99,18 @@ export default function AppointmentsList({
     reset();
   };
 
-  const onSubmitPrescription = async (data: any) => {
+  const onSubmitPrescription: SubmitHandler<PrescriptionFormValues> = async (
+    data,
+  ) => {
     if (!selectedAppointment) return;
 
-    const prescriptionData = {
+    const prescriptionData: NewPrescription = {
       appointmentId: selectedAppointment._id,
-      doctorId: user?._id,
-      patientId: selectedAppointment.patientId._id,
+      doctorId: user?._id || "",
+      patientId:
+        typeof selectedAppointment.patientId === "string"
+          ? selectedAppointment.patientId
+          : selectedAppointment.patientId._id,
       diagnosis: data.diagnosis,
       notes: data.notes,
       medicines: data.medicines,
@@ -92,15 +125,27 @@ export default function AppointmentsList({
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: Appointment["status"]) => {
     const base = "inline-block px-3 py-1 rounded-full text-xs font-medium";
     switch (status) {
       case "completed":
-        return <span className={`${base} bg-green-100 text-green-700`}>✓ Completed</span>;
-      case "check-in":
-        return <span className={`${base} bg-blue-100 text-blue-700`}>⏱ In Progress</span>;
+        return (
+          <span className={`${base} bg-green-100 text-green-700`}>
+            ✓ Completed
+          </span>
+        );
+      case "checked-in":
+        return (
+          <span className={`${base} bg-blue-100 text-blue-700`}>
+            ⏱ In Progress
+          </span>
+        );
       case "scheduled":
-        return <span className={`${base} bg-yellow-100 text-yellow-700`}>⏳ Scheduled</span>;
+        return (
+          <span className={`${base} bg-yellow-100 text-yellow-700`}>
+            ⏳ Scheduled
+          </span>
+        );
       default:
         return null;
     }
@@ -127,10 +172,22 @@ export default function AppointmentsList({
                 👤
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold">{appointment.patientId.name}</h4>
-                <p className="text-sm text-muted-foreground">
-                  {appointment.patientId.email}
-                </p>
+                {(() => {
+                  const patient =
+                    typeof appointment.patientId === "string"
+                      ? null
+                      : appointment.patientId;
+                  return (
+                    <>
+                      <h4 className="font-semibold">
+                        {patient?.name ?? "Unknown patient"}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {patient?.email ?? "-"}
+                      </p>
+                    </>
+                  );
+                })()}
                 <p className="text-xs text-muted-foreground mt-1">
                   📅 {new Date(appointment.date).toLocaleDateString()}
                 </p>
@@ -156,10 +213,16 @@ export default function AppointmentsList({
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-lg w-full relative">
             <h3 className="font-semibold text-xl mb-4">
-              Prescribe for {selectedAppointment.patientId.name}
+              Prescribe for{" "}
+              {typeof selectedAppointment.patientId === "string"
+                ? "Unknown Patient"
+                : selectedAppointment.patientId.name}
             </h3>
 
-            <form onSubmit={handleSubmit(onSubmitPrescription)} className="space-y-4">
+            <form
+              onSubmit={handleSubmit(onSubmitPrescription)}
+              className="space-y-4"
+            >
               {/* Diagnosis */}
               <div>
                 <label className="block text-sm font-medium">Diagnosis</label>
@@ -170,7 +233,11 @@ export default function AppointmentsList({
                     <input {...field} className="w-full p-2 border rounded" />
                   )}
                 />
-                {errors.diagnosis && <p className="text-sm text-red-500">{errors.diagnosis.message}</p>}
+                {errors.diagnosis && (
+                  <p className="text-sm text-red-500">
+                    {errors.diagnosis.message}
+                  </p>
+                )}
               </div>
 
               {/* Notes */}
@@ -180,7 +247,10 @@ export default function AppointmentsList({
                   name="notes"
                   control={control}
                   render={({ field }) => (
-                    <textarea {...field} className="w-full p-2 border rounded" />
+                    <textarea
+                      {...field}
+                      className="w-full p-2 border rounded"
+                    />
                   )}
                 />
               </div>
@@ -188,27 +258,39 @@ export default function AppointmentsList({
               {/* Medicines */}
               <div>
                 <label className="block text-sm font-medium">Medicines</label>
-                {watch("medicines").map((_, i) => (
+                {medicines.map((_, i) => (
                   <div key={i} className="flex gap-2 mb-2">
                     <Controller
-                      name={`medicines[${i}].name`}
+                      name={`medicines.${i}.name` as const}
                       control={control}
                       render={({ field }) => (
-                        <input {...field} className="p-2 border rounded w-1/3" placeholder="Name" />
+                        <input
+                          {...field}
+                          className="p-2 border rounded w-1/3"
+                          placeholder="Name"
+                        />
                       )}
                     />
                     <Controller
-                      name={`medicines[${i}].dosage`}
+                      name={`medicines.${i}.dosage` as const}
                       control={control}
                       render={({ field }) => (
-                        <input {...field} className="p-2 border rounded w-1/3" placeholder="Dosage" />
+                        <input
+                          {...field}
+                          className="p-2 border rounded w-1/3"
+                          placeholder="Dosage"
+                        />
                       )}
                     />
                     <Controller
-                      name={`medicines[${i}].duration`}
+                      name={`medicines.${i}.duration` as const}
                       control={control}
                       render={({ field }) => (
-                        <input {...field} className="p-2 border rounded w-1/3" placeholder="Duration" />
+                        <input
+                          {...field}
+                          className="p-2 border rounded w-1/3"
+                          placeholder="Duration"
+                        />
                       )}
                     />
                   </div>

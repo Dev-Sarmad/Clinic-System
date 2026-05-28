@@ -1,20 +1,31 @@
-import { useAuth } from "../context/AuthContext"
-export default function AdminSidebar({ activeTab, setActiveTab }) {
-    const {user, logout}  =  useAuth()
+import { useAuth } from "../context/AuthContext";
+
+interface AdminSidebarProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+export default function AdminSidebar({
+  activeTab,
+  setActiveTab,
+}: AdminSidebarProps) {
+  const { logout } = useAuth();
   const menuItems = [
     { id: "overview", label: "Dashboard", icon: "📊" },
     { id: "doctors", label: "Doctors", icon: "👨‍⚕️" },
     { id: "patients", label: "Patients", icon: "👥" },
     { id: "appointments", label: "Appointments", icon: "📆" },
     { id: "prescriptions", label: "Prescriptions", icon: "📝" },
-  ]
+  ];
 
   return (
     <div className="w-64 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border">
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="text-2xl font-bold">🏥 MediCare</div>
-        <div className="text-xs text-sidebar-foreground/70 mt-1">Admin Portal</div>
+        <div className="text-xs text-sidebar-foreground/70 mt-1">
+          Admin Portal
+        </div>
       </div>
 
       {/* Menu Items */}
@@ -37,11 +48,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }) {
 
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent transition-colors text-sidebar-foreground" onClick={logout}>
+        <button
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent transition-colors text-sidebar-foreground"
+          onClick={logout}
+        >
           <span className="text-xl">🚪</span>
           <span>Logout</span>
         </button>
       </div>
     </div>
-  )
+  );
 }

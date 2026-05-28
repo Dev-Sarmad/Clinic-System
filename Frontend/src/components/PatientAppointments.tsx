@@ -1,4 +1,24 @@
-export default function PatientAppointments({ appointments, loading }) {
+interface PatientAppointment {
+  id: string;
+  date: string;
+  timeSlot: {
+    start: string;
+    end: string;
+  };
+  doctor: string;
+  patient: string;
+  status: string;
+}
+
+interface PatientAppointmentsProps {
+  appointments: PatientAppointment[];
+  loading: boolean;
+}
+
+export default function PatientAppointments({
+  appointments,
+  loading,
+}: PatientAppointmentsProps) {
   if (loading) return <p>Loading appointments...</p>;
 
   return (
@@ -17,8 +37,12 @@ export default function PatientAppointments({ appointments, loading }) {
         <tbody>
           {appointments.map((a) => (
             <tr key={a.id} className="border-t hover:bg-muted/40">
-              <td className="px-4 py-2">{new Date(a.date).toLocaleDateString()}</td>
-              <td className="px-4 py-2">{a.timeSlot.start} - {a.timeSlot.end}</td>
+              <td className="px-4 py-2">
+                {new Date(a.date).toLocaleDateString()}
+              </td>
+              <td className="px-4 py-2">
+                {a.timeSlot.start} - {a.timeSlot.end}
+              </td>
               <td className="px-4 py-2">{a.doctor}</td>
               <td className="px-4 py-2">{a.patient}</td>
               <td className="px-4 py-2">{a.status}</td>

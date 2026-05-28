@@ -1,5 +1,3 @@
-"use client"
-
 type PatientView = "dashboard" | "doctors" | "prescriptions" | "book-appointment"
 
 interface PatientSidebarProps {

@@ -1,7 +1,6 @@
-import type React from "react";
 import { useState, useEffect } from "react";
+import type { FormEvent } from "react";
 import axios from "axios";
-import { useAuth } from "../context/AuthContext";
 
 interface Doctor {
   id: string;
@@ -26,7 +25,7 @@ interface BookAppointmentProps {
   onBook: (
     doctorId: string,
     appointmentDate: string,
-    appointmentTime: string
+    appointmentTime: string,
   ) => void;
   onCancel: () => void;
 }
@@ -37,7 +36,6 @@ export default function BookAppointment({
   onCancel,
 }: BookAppointmentProps) {
   const [selectedDoctor, setSelectedDoctor] = useState<string>(doctorId || "");
-  const { token } = useAuth();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [appointmentDate, setAppointmentDate] = useState<string>("");
   const [appointmentTime, setAppointmentTime] = useState<string>("");
@@ -102,7 +100,7 @@ export default function BookAppointment({
       });
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (
       !selectedDoctor ||
@@ -138,10 +136,10 @@ export default function BookAppointment({
     try {
       const response = await axios.post(
         "http://localhost:8000/api/appointments/",
-        appointmentData,{
-          withCredentials:true
-        }
-        
+        appointmentData,
+        {
+          withCredentials: true,
+        },
       );
 
       console.log("Appointment Response: ", response);
@@ -160,7 +158,7 @@ export default function BookAppointment({
       if (axios.isAxiosError(err)) {
         setError(
           err.response?.data?.message ||
-            "Failed to book appointment. Please try again."
+            "Failed to book appointment. Please try again.",
         );
       } else {
         setError("An unexpected error occurred. Please try again.");
@@ -171,7 +169,7 @@ export default function BookAppointment({
   };
 
   const doctor = doctors.find(
-    (d) => d._id === selectedDoctor || d.id === selectedDoctor
+    (d) => d._id === selectedDoctor || d.id === selectedDoctor,
   );
   console.log(doctor);
 
