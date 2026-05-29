@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
+import apiClient from "../services/apiClient";
 import axios from "axios";
 
 interface Doctor {
@@ -63,7 +64,7 @@ export default function BookAppointment({
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/rooms/");
+        const response = await apiClient.get("/rooms/");
         const roomsData = Array.isArray(response.data)
           ? response.data
           : response.data.rooms || [];
@@ -81,8 +82,8 @@ export default function BookAppointment({
   }, []);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:8000/api/doctors")
+    apiClient
+      .get("/doctors")
       .then((res) => {
         console.log("Doctors API Response:", res.data);
         if (res.data.success && Array.isArray(res.data.data)) {
@@ -134,8 +135,8 @@ export default function BookAppointment({
     };
 
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/appointments/",
+      const response = await apiClient.post(
+        "/appointments/",
         appointmentData,
         {
           withCredentials: true,

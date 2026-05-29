@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import axios from "axios";
+import apiClient from "../services/apiClient";
 
 interface Doctor {
   _id: string;
@@ -19,8 +19,8 @@ export default function DoctorInfo() {
     const fetchDoctorInfo = async () => {
       try {
         if (!user?._id || !token) return;
-        const res = await axios.get(
-          `http://localhost:8000/api/doctors/${user._id}`,
+        const res = await apiClient.get(
+          `/doctors/${user._id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },

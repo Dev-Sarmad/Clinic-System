@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import PatientHeader from "../components/PatientHeader";
 import PatientSidebar from "../components/PatientSidebar";
 import DoctorsList from "../components/DoctorList";
@@ -9,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import useAppointments from "../hooks/useAppointment";
 import useSubmitPrescription from "../hooks/usePrescriptions";
 import type { Prescription } from "../hooks/usePrescriptions";
+import apiClient from "../services/apiClient";
 
 type PatientView =
   | "dashboard"
@@ -55,7 +55,7 @@ export default function PatientDashboard() {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/doctors/");
+        const response = await apiClient.get("/doctors/");
         setDoctors(response.data);
       } catch (err) {
         console.log("[v0] Error fetching doctors:", err);

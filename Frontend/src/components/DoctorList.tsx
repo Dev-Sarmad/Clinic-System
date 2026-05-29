@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react"
-import axios from "axios"
+import apiClient from "../services/apiClient"
 
 interface Doctor {
   id: string
@@ -33,7 +33,7 @@ export default function DoctorList({ onSelectDoctor }: DoctorsListProps) {
       try {
         setLoading(true)
         setError(null)
-        const response = await axios.get("http://localhost:8000/api/doctors/")
+        const response = await apiClient.get("/doctors/")
         if (response.data.success) {
           setDoctors(response.data.data)
         } else {
